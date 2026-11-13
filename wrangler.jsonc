@@ -1,0 +1,19 @@
+{
+  "name": "pingan-product-matcher",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-01",
+  "assets": {
+    "directory": "public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pingan-products",
+      "database_id": "REPLACE_WITH_YOUR_D1_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

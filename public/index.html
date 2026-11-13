@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平安寿险产品智能匹配</title>
+<style>
+  :root {
+    --orange: #f56a00;
+    --orange-light: #fff3ea;
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #26282c;
+    --muted: #8a9099;
+    --border: #ebedf0;
+    --green: #07c160;
+    --red: #fa5151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #ff7a1a, #f56a00);
+    color: #fff; padding: 28px 20px 34px;
+  }
+  header .inner { max-width: 1080px; margin: 0 auto; }
+  header h1 { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+  header p { margin-top: 8px; font-size: 13px; opacity: .92; }
+  .tabs { max-width: 1080px; margin: -18px auto 0; padding: 0 20px; display: flex; gap: 8px; }
+  .tab {
+    flex: 1; max-width: 220px; text-align: center; padding: 12px 0; border-radius: 12px 12px 0 0;
+    background: #eceff3; color: #5c6470; font-size: 15px; cursor: pointer; user-select: none;
+    font-weight: 600; transition: all .15s;
+  }
+  .tab.active { background: var(--card); color: var(--orange); box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+  main { max-width: 1080px; margin: 0 auto; padding: 20px; }
+  .panel { background: var(--card); border-radius: 14px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.05); display: none; }
+  .panel.active { display: block; }
+
+  /* 表单 */
+  .form-row { margin-bottom: 20px; }
+  .form-row label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .form-row .hint { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .age-gender { display: flex; gap: 16px; flex-wrap: wrap; }
+  .age-gender > div { flex: 1; min-width: 200px; }
+  input[type=number], input[type=text], select {
+    width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
+    font-size: 15px; outline: none; background: #fff; transition: border .15s;
+  }
+  input:focus, select:focus { border-color: var(--orange); }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    padding: 9px 18px; border-radius: 999px; border: 1.5px solid var(--border);
+    background: #fff; font-size: 14px; cursor: pointer; transition: all .15s; user-select: none;
+  }
+  .chip:hover { border-color: var(--orange); }
+  .chip.on { background: var(--orange-light); border-color: var(--orange); color: var(--orange); font-weight: 600; }
+  .switch-row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+  .switch-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .btn {
+    background: var(--orange); color: #fff; border: none; padding: 13px 42px; border-radius: 10px;
+    font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+
+  /* 结果 */
+  .summary { margin: 20px 0 14px; font-size: 14px; color: var(--muted); }
+  .summary b { color: var(--orange); }
+  .result-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 14px; cursor: pointer; transition: box-shadow .15s;
+  }
+  .result-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .result-item.off { opacity: .68; }
+  .r-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .r-rank {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--orange-light); color: var(--orange);
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .r-name { font-size: 17px; font-weight: 700; }
+  .r-code { font-size: 12px; color: var(--muted); }
+  .r-type { font-size: 12px; padding: 2px 10px; border-radius: 6px; background: #eef4ff; color: #3a7afe; }
+  .r-type.fu { background: #f0f9eb; color: var(--green); }
+  .r-type.wn { background: #fdf6ec; color: #e6a23c; }
+  .r-status { font-size: 12px; padding: 2px 10px; border-radius: 6px; background: #fef0f0; color: var(--red); }
+  .r-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .r-tag { font-size: 12px; padding: 3px 10px; border-radius: 6px; background: var(--orange-light); color: var(--orange); }
+  .r-reasons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .r-reason { font-size: 12px; padding: 3px 10px; border-radius: 6px; background: #f0f9eb; color: var(--green); }
+  .r-meta { margin-top: 10px; font-size: 13px; color: #5c6470; line-height: 1.7; }
+  .r-meta span { margin-right: 18px; white-space: nowrap; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
+
+  /* 产品库 */
+  .lib-toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .lib-toolbar input, .lib-toolbar select { flex: 1; min-width: 160px; max-width: 320px; }
+
+  /* 弹窗 */
+  .mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .mask.show { display: flex; }
+  .modal { background: #fff; border-radius: 16px; max-width: 720px; width: 100%; padding: 28px; position: relative; }
+  .modal h2 { font-size: 20px; margin-bottom: 4px; }
+  .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .modal .close { position: absolute; right: 18px; top: 18px; font-size: 22px; color: var(--muted); cursor: pointer; background: none; border: none; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin: 16px 0; }
+  .kv .item { background: var(--bg); border-radius: 10px; padding: 10px 14px; }
+  .kv .k { font-size: 12px; color: var(--muted); }
+  .kv .v { font-size: 14px; margin-top: 3px; }
+  .modal h3 { font-size: 15px; margin: 16px 0 8px; color: var(--orange); }
+  .modal ul { padding-left: 20px; font-size: 14px; line-height: 1.9; color: #3c4148; }
+  .modal .details-text { font-size: 14px; line-height: 1.9; color: #3c4148; white-space: pre-wrap; }
+  .disclaimer { margin-top: 24px; font-size: 12px; color: var(--muted); line-height: 1.7; text-align: center; }
+  @media (max-width: 640px) {
+    header h1 { font-size: 20px; }
+    .panel { padding: 16px; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>平安寿险产品智能匹配</h1>
+    <p>基于《平安保险产品简汇 2026》（传统 2.0% / 分红 1.75%+演示 3.5% / 万能 1%）· 输入年龄与需求，快速找到适合的产品</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="match">智能匹配</div>
+  <div class="tab" data-tab="library">产品库</div>
+</div>
+
+<main>
+  <!-- 智能匹配 -->
+  <section id="panel-match" class="panel active">
+    <div class="form-row">
+      <label>基本信息</label>
+      <div class="age-gender">
+        <div>
+          <input type="number" id="age" min="0" max="100" placeholder="被保人年龄（0-100 岁）">
+        </div>
+        <div>
+          <select id="gender">
+            <option value="">性别不限</option>
+            <option value="m">男</option>
+            <option value="f">女</option>
+          </select>
+        </div>
+        <div>
+          <input type="number" id="budget" min="0" step="100" placeholder="每年预算（元，选填，如 5000）">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>保障需求 <span class="hint">可多选，多选时按匹配度排序</span></label>
+      <div class="chips" id="needChips"></div>
+    </div>
+
+    <div class="form-row">
+      <label>筛选条件</label>
+      <div class="switch-row">
+        <label class="switch-item"><input type="checkbox" id="mainOnly"> 只看主险（排除附加险/万能账户）</label>
+        <label class="switch-item"><input type="checkbox" id="includeOffShelf"> 包含已下架产品</label>
+      </div>
+    </div>
+
+    <button class="btn" id="matchBtn">开始匹配</button>
+
+    <div id="matchResult"></div>
+  </section>
+
+  <!-- 产品库 -->
+  <section id="panel-library" class="panel">
+    <div class="lib-toolbar">
+      <input type="text" id="libSearch" placeholder="搜索产品名称 / 险种代码…">
+      <select id="libCategory">
+        <option value="">全部分类</option>
+      </select>
+    </div>
+    <div id="libList" class="summary">加载中…</div>
+    <div id="libResult"></div>
+  </section>
+
+  <p class="disclaimer">
+    数据来源：《平安保险产品简汇 2026》学习整理资料，仅供产品知识学习与初步筛选参考。<br>
+    具体保险责任、费率、投保规则以平安人寿官方条款与投保提示为准，不构成投保建议。
+  </p>
+</main>
+
+<!-- 详情弹窗 -->
+<div class="mask" id="mask">
+  <div class="modal" id="modal">
+    <button class="close" onclick="closeModal()">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const TAG_LABELS = {
+  重疾: '重疾保障', 医疗: '医疗报销', 门诊: '门急诊', 意外: '意外保障',
+  寿险: '身故/寿险', 养老: '养老金规划', 教育: '子女教育金', 财富: '财富增值',
+  护理: '护理/失能', 税优: '个税抵扣', 万能: '万能账户', 豁免: '保费豁免',
+  分红: '保单分红', 少儿: '少儿专属', 储蓄: '满期返还',
+};
+
+let libraryProducts = [];
+
+// tab 切换
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// 需求 chips
+const chipsEl = document.getElementById('needChips');
+Object.entries(TAG_LABELS).forEach(([key, label]) => {
+  const s = document.createElement('span');
+  s.className = 'chip'; s.textContent = label; s.dataset.key = key;
+  s.addEventListener('click', () => s.classList.toggle('on'));
+  chipsEl.appendChild(s);
+});
+
+// 分类下拉
+fetch('/api/meta').then(r => r.json()).then(meta => {
+  const sel = document.getElementById('libCategory');
+  meta.categories.forEach(cat => {
+    const o = document.createElement('option');
+    o.value = cat; o.textContent = cat;
+    sel.appendChild(o);
+  });
+});
+
+function typeClass(t) { return t === '主险' ? '' : (t.includes('附加') ? 'fu' : 'wn'); }
+
+function productCard(item, rank) {
+  const p = item.product || item;
+  const reasons = item.reasons || [];
+  const off = p.status !== '在售';
+  return `
+  <div class="result-item ${off ? 'off' : ''}" onclick="showDetail('${p.code}')">
+    <div class="r-top">
+      ${rank ? `<div class="r-rank">${rank}</div>` : ''}
+      <span class="r-name">${p.name}</span>
+      <span class="r-code">代码 ${p.code}</span>
+      <span class="r-type ${typeClass(p.type)}">${p.type}</span>
+      ${off ? '<span class="r-status">已下架</span>' : ''}
+    </div>
+    <div class="r-tags">${p.tags.map(t => `<span class="r-tag">${TAG_LABELS[t] || t}</span>`).join('')}</div>
+    ${reasons.length ? `<div class="r-reasons">${reasons.slice(0, 6).map(r => `<span class="r-reason">✓ ${r}</span>`).join('')}</div>` : ''}
+    <div class="r-meta">
+      <span>投保年龄：${p.min_age}-${p.max_age} 岁</span>
+      <span>保险期间：${p.period || '—'}</span>
+      <span>交费：${p.payment || '—'}</span>
+      ${p.min_premium ? `<span>起保点：${p.min_premium.toLocaleString()} 元/年</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function doMatch() {
+  const age = document.getElementById('age').value;
+  const needs = [...document.querySelectorAll('#needChips .chip.on')].map(c => c.dataset.key);
+  const body = {
+    age,
+    gender: document.getElementById('gender').value,
+    budget: document.getElementById('budget').value,
+    needs,
+    mainOnly: document.getElementById('mainOnly').checked,
+    includeOffShelf: document.getElementById('includeOffShelf').checked,
+  };
+  const btn = document.getElementById('matchBtn');
+  btn.disabled = true; btn.textContent = '匹配中…';
+  try {
+    const res = await fetch('/api/match', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    const box = document.getElementById('matchResult');
+    if (!res.ok) { box.innerHTML = `<div class="summary" style="color:var(--red)">${data.error || '请求失败'}</div>`; return; }
+    if (!data.results.length) {
+      box.innerHTML = `<div class="summary">没有找到符合条件的产品，试着放宽年龄、预算或减少需求条件。</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="summary">共为 <b>${body.age}</b> 岁的被保人找到 <b>${data.total}</b> 款适配产品（按匹配度排序，点击卡片查看详情）</div>
+      ${data.results.map((r, i) => productCard(r, i + 1)).join('')}`;
+  } finally {
+    btn.disabled = false; btn.textContent = '开始匹配';
+  }
+}
+document.getElementById('matchBtn').addEventListener('click', doMatch);
+document.getElementById('age').addEventListener('keydown', e => { if (e.key === 'Enter') doMatch(); });
+
+// 产品库
+async function loadLibrary() {
+  const q = document.getElementById('libSearch').value.trim();
+  const cat = document.getElementById('libCategory').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (cat) params.set('category', cat);
+  const res = await fetch('/api/products?' + params.toString());
+  const data = await res.json();
+  libraryProducts = data.products;
+  document.getElementById('libList').textContent = `共 ${data.total} 款产品`;
+  document.getElementById('libResult').innerHTML = data.products.length
+    ? data.products.map(p => productCard(p)).join('')
+    : `<div class="empty">未找到相关产品</div>`;
+}
+document.getElementById('libSearch').addEventListener('input', loadLibrary);
+document.getElementById('libCategory').addEventListener('change', loadLibrary);
+loadLibrary();
+
+// 详情弹窗
+function showDetail(code) {
+  const p = libraryProducts.find(x => x.code === code);
+  if (!p) return;
+  document.getElementById('modalBody').innerHTML = `
+    <h2>${p.name}</h2>
+    <div class="sub">险种代码 ${p.code} · ${p.category} · ${p.type} · ${p.status}</div>
+    <div class="kv">
+      <div class="item"><div class="k">投保年龄</div><div class="v">${p.min_age}-${p.max_age} 周岁</div></div>
+      <div class="item"><div class="k">保险期间</div><div class="v">${p.period || '—'}</div></div>
+      <div class="item"><div class="k">交费期间</div><div class="v">${p.payment || '—'}</div></div>
+      <div class="item"><div class="k">起保点</div><div class="v">${p.min_premium ? p.min_premium.toLocaleString() + ' 元/年' : '随主险 / 未明确'}</div></div>
+    </div>
+    <h3>保障亮点</h3>
+    <ul>${p.features.map(f => `<li>${f}</li>`).join('')}</ul>
+    <h3>保障责任详情</h3>
+    <div class="details-text">${p.details}</div>
+    <h3>需求标签</h3>
+    <div class="r-tags">${p.tags.map(t => `<span class="r-tag">${TAG_LABELS[t] || t}</span>`).join('')}</div>
+  `;
+  document.getElementById('mask').classList.add('show');
+}
+function closeModal() { document.getElementById('mask').classList.remove('show'); }
+document.getElementById('mask').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
